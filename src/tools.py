@@ -51,15 +51,13 @@ def search_wikipedia(query: str) -> dict:
     
 def calculate(expression: str) -> dict:
     try:
-        tree = ast.parse(expression, mode="eval")
-        for node in ast.walk(tree):
-            if not isinstance(node, (
-                ast.Expression. ast.BinOp, ast.UnaryOp, ast.Constant,
-                ast.Add, ast.Sub, ast.Mult, ast.Div, ast.Pow,
-                ast.Mod, ast.FloorDiv, ast.USub, ast.UAdd
-            )):
-                return {"error": "Invalid expression — only math operations allowed"}
-        result = eval(compile(tree, "<string>", "eval"))
+        allowed = set("0123456789+-*/()., ")
+        if not all(c in allowed for c in expression):
+            return {"error": "Invalid expression — only math operations allowed"}
+        result = eval(expression)
+        if not isinstance(result, (int, float)):
+            return {"error": "Expression did not return a number"}
+        
         return {"expression": expression, "result": result}
     except ZeroDivisionError:
         return {"error": "Division by zero"}
@@ -70,18 +68,45 @@ def get_country_info(country: str) -> dict:
     url = f"https://restcountries.com/v3.1/name/{country}"
     try:
         r = requests.get(url, timeout=10)
+        data = r.json()
+
+        if isinstance(data, dict) and not data.get("success", True):
+            wiki = search_wikipedia(country)
+            if "error" not in wiki:
+                return {
+                    "country": country,
+                    "capital": "See Wikipedia",
+                    "population": 0,
+                    "area_km2": 0,
+                    "currencies": [],
+                    "note": wiki["summary"][:300]
+                }
+            return {"error": f"Country API unavailable and Wikipedia fallback failed"}
+
         if r.status_code == 404:
-            return {"error": f"Country '{country} not found"}
-        r.raise_for_status()
-        data = r.json()[0]
+            return {"error": f"Country '{country}' not found"}
+
+        if not isinstance(data, list):
+            return {"error": "Unexpected API response format"}
+
+        match = None
+        for entry in data:
+            if entry.get("name", {}).get("common", "").lower() == country.lower():
+                match = entry
+                break
+        if match is None:
+            match = data[0]
+
         currencies = []
-        for code, info in data.get("currencies", {}).items():
+        for code, info in match.get("currencies", {}).items():
             currencies.append(f"{info.get('name', code)} ({code})")
+
+        capital = match.get("capital", [])
         return {
-            "country": data.get("name", {}).get("common", country),
-            "capital": data.get("capital", ["Unknown"])[0],
-            "population": data.get("population", 0),
-            "area_km2": data.get("area", 0),
+            "country": match.get("name", {}).get("common", country),
+            "capital": capital[0] if capital else "Unkown",
+            "population": match.get("population", 0),
+            "area_km2": match.get("area", 0),
             "currencies": currencies
         }
     except Exception as e:
@@ -89,14 +114,14 @@ def get_country_info(country: str) -> dict:
     
 TOOLS = {
     "get_weather": get_weather,
-    "Search_wikipedia": search_wikipedia,
+    "search_wikipedia": search_wikipedia,
     "calculate": calculate,
     "get_country_info": get_country_info,
 }
 
 def dispatch_tool(tool_name: str, arguments: dict) -> str:
     if tool_name not in TOOLS:
-        return json.dumpts({"Error": f"Unknown tool: {tool_name}"})
+        return json.dumps({"error": f"Unknown tool: {tool_name}"})
     func = TOOLS[tool_name]
     result = func(**arguments)
     return json.dumps(result)
