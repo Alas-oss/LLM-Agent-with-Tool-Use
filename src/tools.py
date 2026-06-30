@@ -13,7 +13,7 @@ def get_weather(city: str) -> dict:
     params = {
         "q": city,
         "appid": OPENWEATHER_API_KEY,
-        "unit": "metric"
+        "units": "metric"
     }
     try:
         r = requests.get(url, params=params, timeout=10)
@@ -68,6 +68,10 @@ def get_country_info(country: str) -> dict:
     url = f"https://restcountries.com/v3.1/name/{country}"
     try:
         r = requests.get(url, timeout=10)
+
+        if r.status_code == 404:
+            return {"error": f"Country '{country}' not found"}
+        r.raise_for_status()
         data = r.json()
 
         if isinstance(data, dict) and not data.get("success", True):
@@ -112,11 +116,39 @@ def get_country_info(country: str) -> dict:
     except Exception as e:
         return {"error": str(e)}
     
+def convert_currency(amount: float, from_currency: str, to_currency: str) -> dict:
+    url = f"https://api.exchangerate-api.com/v4/latest/{from_currency.upper()}"
+    try:
+        r = requests.get(url, timeout=10)
+        r.raise_for_status()
+        data = r.json()
+
+        rates = data.get("rates", {})
+        to_code = to_currency.upper()
+
+        if to_code not in rates:
+            return {"error": f"Currency '{to_currency}' not found"}
+
+        rate = rates[to_code]
+        converted = round(amount * rate, 2)
+
+        return {
+            "amount": amount,
+            "from": from_currency.upper(),
+            "to":to_code,
+            "rate": rate,
+            "converted_amount": converted
+        }
+    except Exception as e:
+        return {"error": str(e)}
+        
+
 TOOLS = {
     "get_weather": get_weather,
     "search_wikipedia": search_wikipedia,
     "calculate": calculate,
     "get_country_info": get_country_info,
+    "convert_currency": convert_currency,
 }
 
 def dispatch_tool(tool_name: str, arguments: dict) -> str:

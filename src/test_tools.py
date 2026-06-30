@@ -2,7 +2,7 @@ import sys
 import os
 sys.path.append(os.path.dirname(__file__))
 
-from tools import get_weather, search_wikipedia, calculate, get_country_info
+from tools import get_weather, search_wikipedia, calculate, get_country_info, convert_currency
 
 passed = 0
 failed = 0
@@ -45,5 +45,10 @@ test("returns country name", "country" in result)
 test("returns capital", "capital" in result and result["capital"] != "")
 test("returns population", "population" in result)
 test("handles unknown country", "error" in get_country_info("Xqzptlnarniafakecountry45"))
+
+print("\n── Tool 5: convert_currency ────────────────────────────────")
+result = convert_currency(100, "USD", "EUR")
+test("returns converted amount", "converted_amount" in result)
+test("handles invalid currency", "error" in convert_currency(100, "USD", "FAKECODE"))
 
 print(f"\n── Results: {passed} passed, {failed} failed ─────────────────")
