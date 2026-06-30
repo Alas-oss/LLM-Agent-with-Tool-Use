@@ -22,7 +22,7 @@ Tool docstrings turned out to be functionally part of the code, not just part of
 
 A second surprise came form the `get_country_info` tool: mid-build, the REST Countries API started returning a 200-status response with `{"success": false}` instead of a clean error, which surfaced several calls downstream as an unrelated-looking crash. The fix detects that response shape and falls back to `search_wikipedia` for basic country facts, so the tool degrades gracefully instead of failing outright.
 
-## The Recommended Default PAtter 
+## The Recommended Default Pattern
 ### System Prompt:
 "You are a helpful research assistant with access to tools."
 
@@ -32,7 +32,7 @@ A second surprise came form the `get_country_info` tool: mid-build, the REST Cou
 
 "When you have all the information needed, give a clear complete answer."
 
-### Tool dispatch pattern:
+### Tool Dispatch Pattern:
 ```
 result = dispatch_tool(tool_call.function.name, json.loads(tool_call.function.arguments))
 messages.append({"role": "tool", "tool_call_id": tool_call.id, "content": result})
