@@ -5,7 +5,7 @@ A research assistant agent that combines weather, Wikipedia, calculator, country
 ## Setup
 1. Clone the repo
 2. Create a virtual environmnet: `python -m venv venv`
-3. Activate it: `.\venv\Scripts\activate` (Windows) or
+3. Activate it: `.\venv\Scripts\activate` (Windows) or `source venv/bin/activate` (Mac/Linux)
 4. Install dependencies: `pip install -r requirements.txt` (powershell)
 5. Create a `.env` file with your API keys: 
     - GROQ_API_KEY = your_groq_key
