@@ -1,4 +1,4 @@
-# Task 4 - LLM Agent with Tool Use
+# LLM Agent with Tool Use
 
 A research assistant agent that combines weather, Wikipedia, calculator, country facts, and currency conversion tools to answer multi-step questions.
 
